@@ -40,25 +40,25 @@ This package is setup to provide an automated way to keep updated Let's Encrypt 
      };
      ```
 10. Create ref files in the ~/leutmdns/refs/ folder.
-   - First, you'll need to ensure you have existing certificates created that you want to target for updates from the LE cert renewals.
-     ```
-     cc
-     OBJS
-     ca
-     host_key_cert
-     tab tab (hit it twice to list existing REF_* for each cert).
-     exit
-     ```
-   - Create a file named after the primary domain (first domein on each line of ~/leutmdns/domains.txt).  If your domains.txt file contains domain.com www.domain.com on line 1, and www.domain.net www2.domain.net on line 2:
-     ```bash
-     cd ~/leutmdns/refs
-     echo REF_123456789 >> domain.com
-     echo REF_987654321 >> www.domain.net
-     ```
+    - First, you'll need to ensure you have existing certificates created that you want to target for updates from the LE cert renewals.
+      ```
+      cc
+      OBJS
+      ca
+      host_key_cert
+      tab tab (hit it twice to list existing REF_* for each cert).
+      exit
+      ```
+    - Create a file named after the primary domain (first domein on each line of ~/leutmdns/domains.txt).  If your domains.txt file contains domain.com www.domain.com on line 1, and www.domain.net www2.domain.net on line 2:
+      ```bash
+      cd ~/leutmdns/refs
+      echo REF_123456789 >> domain.com
+      echo REF_987654321 >> www.domain.net
+      ```
 11. Run a test!
-   - Again ensure you're targeting the staging LE servers.
-   - Probably a good idea not to target any active certs in the UTM, so create a fake one to test with.
-   - Kick off the proces (in ~/leutmdns folder): `./dehydrated -c`
+    - Again ensure you're targeting the staging LE servers.
+    - Probably a good idea not to target any active certs in the UTM, so create a fake one to test with.
+    - Kick off the proces (in ~/leutmdns folder): `./dehydrated -c`
 12. Update domains.txt, REF_ files, and switch staging urls to prod urls in the config file and go live with it.
 ### Automate
 TODO: Create steps to add this as a cron to the UTM box.
