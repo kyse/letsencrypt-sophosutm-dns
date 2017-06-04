@@ -55,11 +55,13 @@ This package is setup to provide an automated way to keep updated Let's Encrypt 
       echo REF_123456789 >> domain.com
       echo REF_987654321 >> www.domain.net
       ```
-11. Run a test!
+11. Register an account.
+    - `./dehydrated --register --accept-terms`
+12. Run a test!
     - Again ensure you're targeting the staging LE servers.
     - Probably a good idea not to target any active certs in the UTM, so create a fake one to test with.
     - Kick off the proces (in ~/leutmdns folder): `./dehydrated -c`
-12. Update domains.txt, REF_ files, and switch staging urls to prod urls in the config file and go live with it.
+13. Update domains.txt, REF_ files, and switch staging urls to prod urls in the config file and go live with it.
 ### Automate
 TODO: Create steps to add this as a cron to the UTM box.
 ### Notes
