@@ -7,6 +7,7 @@
 # - Updated to only require a TSIG file for the zone, not for each individual FQDN.
 # - Added support to match up domains to UTM REF_ object names.
 # - Added support to call a specified UTM update certificate hook.
+# - Moved initialization logic into function to prevent error output exit hook (with no params) is called.
 
 # Publish an acme challenge in DNS. This script is made to work with letsencrypt.sh by lukas2511.
 # You need a Bind DNS Server you can publish records using nsupdate. The script was written and
