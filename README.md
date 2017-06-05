@@ -14,8 +14,10 @@ This package is not meant to be used on production servers or by inexperienced u
 - [Contributing](#contributing)
   - [Development Setup](#development-setup)
 ## Description
-This package is setup to provide an automated way to keep updated Let's Encrypt ssl certs on your UTM without dealing with SSH key's, SCP file transfers, etc.  Everything happens on the UTM and stays on the UTM.  It will work well in scenarios where you intend to perform SSL termination at the UTM WAF and intend to use DNS-01 acme-challenge verifications of your domains.  Some modifications have been made to Dehydrated and the hooks to ensure things work properly on the UTM shell.
+This package is setup to provide an automated way to keep updated Let's Encrypt ssl certs on your UTM without dealing with SSH key's, SCP file transfers, etc.  Everything happens on the UTM and stays on the UTM.  It will work well in scenarios where you intend to perform SSL termination at the UTM WAF and intend to use DNS-01 acme-challenge verifications of your domains.  Some modifications have been made to Dehydrated and the hooks to ensure things work properly when running in the UTM environment.
 ## Usage
+### UTM Environment
+- You need to ensure you have the Let's Encrypt intermediate verification CA imported in your UTM.  It can be found [here](https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem).
 ### Setup
 1. SSH into your UTM shell: `ssh -l loginuser utm.domain.local`
 2. Become root: `su`, enter root password
@@ -63,20 +65,32 @@ This package is setup to provide an automated way to keep updated Let's Encrypt 
     - Kick off the proces (in ~/leutmdns folder): `./dehydrated -c`
 13. Update domains.txt, REF_ files, and switch staging urls to prod urls in the config file and go live with it.
 ### Automate
-TODO: Create steps to add this as a cron to the UTM box.
+TODO: There's bound to be a better way to achieve this.  Research and update this section.  Also ned to update output, possibly figure out how to get it to email output & errors through the UTM notification system.
+1. Add a link to dehydrated to your bin path: `ln -s /root/leutmdns/dehydrated /usr/local/bin/dehydrated`
+2. Add a line to the bottom of your /etc/crontab-static file: `@monthly  root  /usr/local/bin/dehydrated -c`
+3. Make a change in the UTM web admin site to get the crontab file updated.
+   - In web admin site, click the management menu item.
+   - Select up2date sub menu item.
+   - Select the configuration tab.
+   - Change one of the dropdowns to a different value, save, then change back to your desired value and save again.
+4. Confirm /etc/crontab contains the new entry.
 ### Notes
 - UTM uses a customized openssl.cnf file in /etc/ssl that doesn't work well unless provided proper ENV variables.  Dehydrated stock script didn't provide the --cert flag during the certificate request which caused openssl to try and load up the UTM openssl.cnf file.  I've updated the dehydrated script on line 619 to include the flag to the openssl.cnf file path provided in the ~/leutmdns/config file to resolve.
 - Ensure you have a file for each DNS zone you will be updating using the proper naming scheme in the tsig folder.
 - Ensure you have a file for each certificate named after the domain (the first domain per line/cert in domains.txt file) containing the REF_* to your UTM certificate object.
 ## Dependencies
-We make use of the following submodule dependencies so as not to reinvent the wheel.
+### SubModules
+Making use of the following submodule dependencies so as not to reinvent the wheel:
 - [Dehydrated](https://github.com/lukas2511/dehydrated) - Modified
 - [utm-update-certificate](https://github.com/mbunkus/utm-update-certificate.git)
+### Other Imports
+Also directly imported and modified the followng:
 - [Dehydrated Hook Example](https://ente.limmat.ch/ftp/pub/software/bash/letsencrypt/letsencrypt_acme_dns-01_challenge_hook) - Modified
 ## Contributing
 ### Development Setup
-1. Download the git repo to your local environment and load the submodules.
-   ```bash
-   git clone --recursive https://github.com/kyse/letsencrypt-sophosutm-dns.git leutmdns
-   ```
+Download the git repo to your local environment and load the submodules.
+```bash
+git clone --recursive https://github.com/kyse/letsencrypt-sophosutm-dns.git leutmdns
+```
 
+To get a new .tar.gz package built in the dist folder, just run build.sh.
