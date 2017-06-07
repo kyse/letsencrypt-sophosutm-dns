@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+# Script to download, extract, and setup leutmdns
+#
+# Run as root or insert `sudo -E` before `bash`:
+#
+# curl -sL https://raw.githubusercontent.com/kyse/letsencrypt-sophosutm-dns/master/getleutmdns | bash -
+#
+
+BRANCH="master"
+DIST="https://raw.githubusercontent.com/kyse/letsencrypt-sophosutm-dns/$BRANCH/dist/leutmdns.tar.gz"
+CHK="https://raw.githubusercontent.com/kyse/letsencrypt-sophosutm-dns/$BRANCH/dist/checksum.md5"
+
+print_status() {
+  echo
+  echo "## $1"
+  echo
+}
+
+if test -t 1; then # if terminal
+  ncolors=$(which tput > /dev/null && tput colors) # supports color
+  if test -n "$ncolors" && test $ncolors -ge 8; then
+    termcols=$(tput cols)
+    bold="$(tput bold)"
+    underline="$(tput smul)"
+    standout="$(tput smso)"
+    normal="$(tput sgr0)"
+    black="$(tput setaf 0)"
+    red="$(tput setaf 1)"
+    green="$(tput setaf 2)"
+    yellow="$(tput setaf 3)"
+    blue="$(tput setaf 4)"
+    magenta="$(tput setaf 5)"
+    cyan="$(tput setaf 6)"
+    white="$(tput setaf 7)"
+  fi
+fi
+
+_section() {
+  echo "${bold}${cyan}== ${normal}$@${normal}" >&2
+}
+
+_status() {
+  echo "${bold}${green}* ${normal}$@${normal}" >&2
+}
+
+_exiterr() {
+  echo "${bold}${red}ERROR: ${normal}${@}${normal}" >&1
+  cleanup
+  exit 1
+}
+
+_echoerr() {
+  echo "${bold}${red}ERROR: ${normal}${@}${normal}" >&1
+}
+
+bail() {
+  echo "${bold}${red}Error executing command, exiting.${normal}" >&1
+  cleanup
+  exit 1
+}
+
+exec_cmd_nobail() {
+  echo ${bold}"${yellow}+ ${normal}$@${normal}"
+  bash -c "$@"
+}
+
+exec_cmd() {
+  exec_cmd_nobail "$@" || bail
+}
+
+perform_checks() {
+  _section "Performing Checks"
+  [ ! -d ./leutmdns ] || _exiterr "Detected an instance of leutmdns in the current folder already.  Exiting to prevent possible loss of data."
+  TAR=$(which tar) && [ -f $TAR ] || _exiterr "This script requires ${red}tar${normal}."
+  CURL=$(which curl) && [ -f $CURL ] || _exiterr "This script requires ${red}curl${normal}."
+  MKTEMP=$(which mktemp) && [ -f $MKTEMP ] || _exiterr "This script requires ${red}mktemp${normal}."
+  _status "Checks Passed"
+}
+
+_mktemp() {
+  $MKTEMP ${@:-} "${TMPDIR:-/tmp}/leutmdns-XXXXXX"
+}
+
+download_leutmdns() {
+  _section "Downloading leutmdns package"
+  _status "URL: $DIST"
+  PACKAGE=$(_mktemp)
+  RESPONSESTATUS="$($CURL -L -w "%{http_code}" -o "$PACKAGE" "$DIST")"
+  if [ $RESPONSESTATUS -ne 200 ]; then
+    _echoerr "There was an error attempting to download the package."
+    _exiterr "Status: ${bold}${red}$RESPONSESTATUS${normal}"
+  fi
+  _status "Downloaded"
+}
+
+verify_download() {
+  _section "Verifying package download"
+  _status "Checksum URL: $CHK"
+  local -a chkValue=($($CURL -w "\n%{http_code}\n" ${CHK}))
+  if [ "$?" -ne 0 ]; then
+    _exiterr "There was an error retrieving the checksum to validate the download."
+  fi
+  local -i status=${chkValue[${#chkValue[@]}-1]}
+  if [ $status -ne 200 ]; then
+    _echoerr "Unable to locate checksum file."
+    _exiterr "Status: ${bold}${red}$status${normal}, Response: ${bold}${red}${chkValue[@]/$status/}${normal}"
+  fi
+  exec_cmd "echo \"${chkValue[0]}  $PACKAGE\" | md5sum -c"
+  if [ ! $? -eq 0 ]; then
+    _exiterr "Download failed verification.  Aborting..."
+  fi
+  _status "Package verified"
+}
+
+extract_package() {
+  _section "Extracting package"
+  exec_cmd "tar -xzvf $PACKAGE"
+  _status "Extraction complete"
+}
+
+cleanup() {
+  _section "Cleaaning up"
+  [ ! -f "$PACKAGE" ] || exec_cmd_nobail "rm $PACKAGE"
+  _status "Dust swept under rug."
+}
+
+main() {
+  
+  perform_checks
+  download_leutmdns
+  verify_download
+  extract_package
+  cleanup
+
+  # Call hook to propmt input for setting up domains and ref files, updating config, etc.
+
+  # Update cron once a proper persistent workflow is ironed out.
+
+  exit 0
+}
+
+main "${@:-}"
