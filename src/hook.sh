@@ -231,7 +231,7 @@ case "$reason" in
 
     get_ref
     
-    echo "Args: $DOMAINREF $CERTFILE $KEYFILE"
+    #echo "Args: $DOMAINREF $CERTFILE $KEYFILE"
     "${UPDATECERTHOOK}" "${DOMAINREF}" "${CERTFILE}" "${KEYFILE}"
     ;;
 

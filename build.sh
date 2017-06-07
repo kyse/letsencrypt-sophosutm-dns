@@ -22,6 +22,7 @@ BASEDIR="${SCRIPTDIR}"
 BUILDDIR="build"
 DISTDIR="dist"
 SRCDIR="src"
+CHECKSUM="checksum.md5"
 
 PROJNAME="leutmdns"
 
@@ -46,10 +47,11 @@ command_build() {
 
   # Create the package
   [[ -d ${BASEDIR}/${DISTDIR} ]] || mkdir -p ${BASEDIR}/${DISTDIR} || _exiterr "Unable to create ${BASEDIR}/${DISTDIR} directry."
-  [[ ! -f ${BASEDIR}/${DISTDIR}/leutmdns.tar.gz ]] || rm ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz
+  [[ ! -f ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz ]] || rm ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz
+  [[ ! -f ${BASEDIR}/${DISTDIR}/${CHECKSUM} ]] || rm ${BASEDIR}/${DISTDIR}/${PROJNAME}.${CHECKSUM}
   printf "Creating distribution package: ${PROJNAME}.tar.gz\nLocation: ${BASEDIR}/${DISTDIR}/"
   tar -czvf ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz -C ${BASEDIR} --transform "s/^${BUILDDIR}/${PROJNAME}/" ${BUILDDIR}
-  
+  md5sum ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz > ${BASEDIR}/${DISTDIR}/${CHECKSUM}
   command_clean
 }
 
