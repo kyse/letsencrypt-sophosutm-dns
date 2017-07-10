@@ -144,8 +144,8 @@ get_ref() {
     echo " ERROR: No ref file for domain '$DOMAIN'.  Please provide a file containing the REF_ string."
     exit 1
   fi
-  DOMAINREF="$(cat "${REFPATH}/${DOMAIN}")"
-  if [ -z "${DOMAINREF}" ]; then
+  DOMAINREF=($(cat "${REFPATH}/${DOMAIN}"))
+  if [ "${#DOMAINREF[@]}" -le 0 ]; then
     echo " ERROR: ref file appears empty.  Please correct."
     exit 1
   fi
@@ -230,9 +230,10 @@ case "$reason" in
     fi
 
     get_ref
-    
-    #echo "Args: $DOMAINREF $CERTFILE $KEYFILE"
-    "${UPDATECERTHOOK}" "${DOMAINREF}" "${CERTFILE}" "${KEYFILE}"
+   
+    for i in ${!DOMAINREF[@]}; do
+      "${UPDATECERTHOOK}" "${DOMAINREF[$i]}" "${CERTFILE}" "${KEYFILE}"
+    done
     ;;
 
 	unchanged_cert)

@@ -42,13 +42,13 @@ command_build() {
   git submodule update --init --recursive
 
   mkdir -p ${BASEDIR}/${BUILDDIR}/{accounts,certs,refs,tsig} || _exiterr "Unable to create ${BASEDIR}/${BUILDDIR} directory."
-  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/dehydrated/docs/examples/{config,domains.txt} ${BASEDIR}/utm-update-certificate/utm_update_certificate.pl || _exiterr "An error occured copying submodule files.  Make sure you run the command 'git submodule update --init --recursive' before building."
-  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/${SRCDIR}/{dehydrated,hook.sh,openssl.cnf} || _exiterr "An error occured copying src files."
+  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/dehydrated/dehydrated ${BASEDIR}/dehydrated/docs/examples/{config,domains.txt} ${BASEDIR}/utm-update-certificate/utm_update_certificate.pl || _exiterr "An error occured copying submodule files.  Make sure you run the command 'git submodule update --init --recursive' before building."
+  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/${SRCDIR}/{hook.sh,openssl.cnf} || _exiterr "An error occured copying src files."
 
   # Create the package
   [[ -d ${BASEDIR}/${DISTDIR} ]] || mkdir -p ${BASEDIR}/${DISTDIR} || _exiterr "Unable to create ${BASEDIR}/${DISTDIR} directry."
   [[ ! -f ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz ]] || rm ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz
-  [[ ! -f ${BASEDIR}/${DISTDIR}/${CHECKSUM} ]] || rm ${BASEDIR}/${DISTDIR}/${PROJNAME}.${CHECKSUM}
+  [[ ! -f ${BASEDIR}/${DISTDIR}/${CHECKSUM} ]] || rm ${BASEDIR}/${DISTDIR}/${CHECKSUM}
   printf "Creating distribution package: ${PROJNAME}.tar.gz\nLocation: ${BASEDIR}/${DISTDIR}/"
   tar -czvf ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz -C ${BASEDIR} --transform "s/^${BUILDDIR}/${PROJNAME}/" ${BUILDDIR}
   md5sum ${BASEDIR}/${DISTDIR}/${PROJNAME}.tar.gz > ${BASEDIR}/${DISTDIR}/${CHECKSUM}
