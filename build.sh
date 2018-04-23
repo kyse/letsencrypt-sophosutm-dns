@@ -39,11 +39,11 @@ command_clean() {
 command_build() {
   command_clean
 
-  git submodule update --init --recursive
+  #git submodule update --init --recursive
 
   mkdir -p ${BASEDIR}/${BUILDDIR}/{accounts,certs,refs,tsig} || _exiterr "Unable to create ${BASEDIR}/${BUILDDIR} directory."
-  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/dehydrated/dehydrated ${BASEDIR}/dehydrated/docs/examples/{config,domains.txt} ${BASEDIR}/utm-update-certificate/utm_update_certificate.pl || _exiterr "An error occured copying submodule files.  Make sure you run the command 'git submodule update --init --recursive' before building."
-  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/${SRCDIR}/{hook.sh,openssl.cnf} || _exiterr "An error occured copying src files."
+  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/dehydrated/dehydrated ${BASEDIR}/dehydrated/docs/examples/domains.txt ${BASEDIR}/utm-update-certificate/utm_update_certificate.pl || _exiterr "An error occured copying submodule files.  Make sure you run the command 'git submodule update --init --recursive' before building."
+  cp -t ${BASEDIR}/${BUILDDIR}/ ${BASEDIR}/${SRCDIR}/{hook.sh,openssl.cnf,config} || _exiterr "An error occured copying src files."
 
   # Create the package
   [[ -d ${BASEDIR}/${DISTDIR} ]] || mkdir -p ${BASEDIR}/${DISTDIR} || _exiterr "Unable to create ${BASEDIR}/${DISTDIR} directry."

@@ -69,7 +69,7 @@ CHECK_NS_TIMEOUT=10
 
 # If your using this script behind a split brain DNS, specify a DNS server here to use to retrieve
 # authenticated server info for confrming DNS-01 challenge deployment.
-#EXTERNALNS="ns1.mydyndns.org"
+EXTERNALNS="ns1.mydyndns.org"
 
 # Path to hook used to update UTM certificates.
 UPDATECERTHOOK="`dirname $0`/utm_update_certificate.pl"
@@ -88,12 +88,14 @@ reason="$1"
 
 # execute nsupdate update function
 update_dns() {
+  printf -v updates "%s\n" "$@"
+  updates=${updates%?}
 	echo -n " + Updating DNS $SERVER: $reason for $HOST... " >&2
 	ERR="$(nsupdate -k "$KEYFILE" 2>&1 << \
 EOF
 server $SERVER
 zone $ZONE
-$1
+${updates[@]}
 send
 EOF
 	)"
@@ -112,7 +114,7 @@ setup_cmd() {
   TLD="$(echo "$ZONE" | sed -e "s/^.*\.//")"
 
   until [ "${ZONE}" = "$TLD" ]; do
-	  KEYFILE="$(ls -1 "${KEYPATH}/K${ACME_STRING}.${ZONE}.+157+"*.private 2>/dev/null)"
+    KEYFILE="$(ls -1 "${KEYPATH}/K${ACME_STRING}.${ZONE}.+157+"*.private 2>/dev/null)"
 	  if [ $? -eq 0 ]; then break; fi
 	  ZONE="$(echo "$ZONE" | sed -e "s/^[^.]*\.//")"
   done
@@ -120,12 +122,12 @@ setup_cmd() {
 	  echo " ERROR: Multiple nsupdate key files for $HOST found. Please correct!" >&2
   	exit 1
   elif [ -z "$KEYFILE" ]; then
-  	echo " ERROR: No nsupdate key file for zone $HOST found. Can't publish challenge without." >&2
+  	echo " ERROR: No nsupdate key file for zone $HOST found. Can't publish challenge without. File expected: $KEYFILE" >&2
   	exit 1
   fi
 
   # construct line to update dns zone with
-  update_data="${ACME_STRING}.${HOST}.	$TTL	IN	TXT	\"$CHALLENGE\""
+  update_data="${ACME_STRING}.${HOST}. $TTL IN TXT \"$CHALLENGE\""
   
   # get all authoritative name servers
   nslookup=""
@@ -160,15 +162,23 @@ case "$reason" in
     setup_cmd
 
 		# delete any previous challenge
+    # Not deleting anymore since wildcard situations where a domain.txt line entry = domain.com *.domain.com
+    #   results in 2 txt entry for domain.com
+
+    # Now we always send an array to update_dns, so create array and include new entry.
+    update_entries=( "update add $update_data" )
+    
+    # And grab any old entries...
 		old_challenges="$(dig +short ${ACME_STRING}.${HOST}. TXT ${nslookup})"
 		for old_challenge in $old_challenges; do
-			reason="deleting previous challenge"
-			update_dns "update delete ${ACME_STRING}.${HOST}.    $TTL    IN      TXT	$old_challenge"
+		#	reason="deleting previous challenge"
+		#	update_dns "update delete ${ACME_STRING}.${HOST}.    $TTL    IN      TXT	$old_challenge"
+      update_entries+=( "update add ${ACME_STRING}.${HOST}. $TTL IN TXT $old_challenge" )
 		done
-		
+	  
 		# publish challenge
 		reason="publishing acme challenge"
-		update_dns "update add $update_data"
+		update_dns "${update_entries[@]}"
 
 		# ensure all NS got the challenge
 		let -i ns_ok_cnt=0
@@ -181,8 +191,8 @@ case "$reason" in
 			echo -ne "\t+ Checking challenge on $ns.. " >&2
 			# try max. CHECK_NS_TIMEOUT seconds
 			while [ $(($(date "+%s")-$timestamp)) -lt $CHECK_NS_TIMEOUT ]; do
-				msg="$(dig +short "${ACME_STRING}.${HOST}" TXT @${ns} 2>&1)"
-				if [ $? -eq 0 -a "$msg" = "\"$CHALLENGE\"" ]; then
+        msg=( "$(dig +short "${ACME_STRING}.${HOST}" TXT @${ns} 2>&1)" )
+				if [[ $? -eq 0 && "${msg[@]}" =~ "\"$CHALLENGE\"" ]]; then
 					dig_result="ok."
 					let "ns_ok_cnt+=1"
 					break;
@@ -197,7 +207,7 @@ case "$reason" in
 		# if there was no answer or just errors from dig exit non-zero
 		[ $ns_ok_cnt -eq 0 ] && echo -e "\tERROR: None of the name server\(s\) answer the challenge correctly." >&2 && exit 1
 		# Report some NS failed
-		[ $ns_ok_cnt -lt $ns_cnt ] && echo -e "\tWARNING: Only $ns_ok_cnt out of $ns_cnt name servers do answer the challenge correctly." >&2
+		[ $ns_ok_cnt -lt $ns_cnt ] && echo -e "\tWARNING: Only $ns_ok_cnt out of $ns_cnt name servers answered the challenge correctly." >&2
 		;;
 
 	clean_challenge)
@@ -246,8 +256,9 @@ case "$reason" in
     ;;
 
 	*)
-		echo "Unknown hook: ${reason}"
-		exit 1
+    #########echo "Ignoring hook: ${reason}"
+		#echo "Unknown hook: ${reason}"
+		#exit 1
 		;;
 esac
 
